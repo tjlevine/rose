@@ -14,12 +14,11 @@ xorriso          \
 && apt-get clean \
 && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
-# install rust
-RUN /bin/bash -c "curl https://sh.rustup.rs -sSf | sh -s -- -y && source $HOME/.cargo/env"
-
 ADD . /rose
-
 WORKDIR /rose
+
+# install rust
+RUN /bin/bash -c "curl https://sh.rustup.rs -sSf | sh -s -- -y && source $HOME/.cargo/env && rustup override add nightly"
 
 CMD ["rake"]
 
