@@ -6,7 +6,7 @@
 
 require 'rake'
 
-task :default => :test
+task :default => :iso
 
 # Target architecture
 arch = ENV["ARCH"] || "x86_64"
@@ -29,58 +29,47 @@ kernel = "#{build_root}/#{kernel_name}"
 iso = "#{build_root}/rose-#{arch}.iso"
 linker_script = "#{arch_src_root}/linker.ld"
 grub_cfg_template = "#{arch_src_root}/grub.cfg.template"
+grub_cfg = "#{iso_root}/boot/grub/grub.cfg"
 asm_sources = Rake::FileList["#{arch_src_root}/*.asm"]
 asm_objects = asm_sources.pathmap("%{^#{arch_src_root},#{arch_build_root}}X.o")
 
 directory "#{arch_build_root}"
 directory "#{iso_root}/boot/grub"
 
+desc "Generate object files from assembly source files"
 task :asm_objects => [arch_build_root] + asm_objects
+
+desc "Generate kernel binary"
 task :kernel => kernel
+
+desc "Generate ISO image"
 task :iso => iso
-task :iso_files => [:iso_grub_cfg, :iso_kernel]
-task :iso_kernel => "#{iso_root}/boot/#{kernel_name}"
-task :iso_grub_cfg => "#{iso_root}/boot/grub/grub.cfg"
+
+desc "Run rose using qemu"
 task :run => iso do |t|
     sh "/usr/bin/qemu-system-x86_64 -curses -cdrom #{iso}"
 end
+
+desc "Clean up build files"
 task :clean do |t|
     rm_rf build_root
-end
-task :test do |t|
-    puts "arch: #{arch}"
-    puts "build_root: #{build_root}"
-    puts "src_root: #{src_root}"
-    puts "iso_root: #{iso_root}"
-    puts "kernel: #{kernel}"
-    puts "kernel_name: #{kernel_name}"
-    puts "iso: #{iso}"
-    puts "arch_build_root: #{arch_build_root}"
-    puts "arch_src_root: #{arch_src_root}"
-    puts "linker script: #{linker_script}"
-    puts "grub_cfg_template: #{grub_cfg_template}"
-    puts "asm_sources: #{asm_sources}"
-    puts "asm_objects: #{asm_objects}"
 end
 
 rule ".o" => proc { |task_name| task_name.pathmap("%{^#{arch_build_root},#{arch_src_root}}X.asm")} do |t|
     sh "nasm -felf64 #{t.source} -o #{t.name}"
 end
 
-file "#{iso_root}/boot/grub/grub.cfg" => [grub_cfg_template, "#{iso_root}/boot/grub"] do |t|
-    cp grub_cfg_template, "#{iso_root}/boot/grub/grub.cfg"
-    sh "sed -i s/KERNEL_BIN/#{kernel_name}/ #{iso_root}/boot/grub/grub.cfg"
+file grub_cfg => [grub_cfg_template, "#{iso_root}/boot/grub"] do |t|
+    cp grub_cfg_template, grub_cfg
+    sh "sed -i s/KERNEL_BIN/#{kernel_name}/ #{grub_cfg}"
 end
 
-file "#{iso_root}/boot/#{kernel_name}" => [kernel, "#{iso_root}/boot"] do |t|
+file kernel => [linker_script, :asm_objects, "#{iso_root}/boot"] do |t|
+    sh "ld -n -T #{linker_script} -o #{kernel} #{asm_objects}"
     cp kernel, "#{iso_root}/boot/#{kernel_name}"
 end
 
-file kernel => [linker_script, :asm_objects] do |t|
-    sh "ld -n -T #{linker_script} -o #{kernel} #{asm_objects}"
-end
-
-file iso => :iso_files do |t|
+file iso => [grub_cfg, kernel] do |t|
     sh "grub-mkrescue -o #{iso} #{iso_root}"
 end
 
