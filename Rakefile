@@ -22,7 +22,7 @@ arch_src_root = src_root.pathmap("%p/arch/#{arch}")
 arch_build_root = build_root.pathmap("%p/arch/#{arch}")
 
 # root of the generated kernel iso image
-iso_root = build_root.pathmap("%p/iso")
+iso_root = build_root.pathmap("%p/isoroot")
 
 kernel_name = "#{ENV["KERNEL_NAME"] || "kernel"}-#{arch}.bin"
 kernel = "#{build_root}/#{kernel_name}"
@@ -33,11 +33,8 @@ grub_cfg = "#{iso_root}/boot/grub/grub.cfg"
 asm_sources = Rake::FileList["#{arch_src_root}/*.asm"]
 asm_objects = asm_sources.pathmap("%{^#{arch_src_root},#{arch_build_root}}X.o")
 
-directory "#{arch_build_root}"
+directory arch_build_root
 directory "#{iso_root}/boot/grub"
-
-desc "Generate object files from assembly source files"
-task :asm_objects => [arch_build_root] + asm_objects
 
 desc "Generate kernel binary"
 task :kernel => kernel
@@ -55,7 +52,10 @@ task :clean do |t|
     rm_rf build_root
 end
 
-rule ".o" => proc { |task_name| task_name.pathmap("%{^#{arch_build_root},#{arch_src_root}}X.asm")} do |t|
+rule ".o" => [
+        proc { |t| t.pathmap("%{^#{arch_build_root},#{arch_src_root}}X.asm")},
+        arch_build_root
+    ] do |t|
     sh "nasm -felf64 #{t.source} -o #{t.name}"
 end
 
@@ -64,12 +64,12 @@ file grub_cfg => [grub_cfg_template, "#{iso_root}/boot/grub"] do |t|
     sh "sed -i s/KERNEL_BIN/#{kernel_name}/ #{grub_cfg}"
 end
 
-file kernel => [linker_script, :asm_objects, "#{iso_root}/boot"] do |t|
+file kernel => [linker_script, *asm_objects] do |t|
     sh "ld -n -T #{linker_script} -o #{kernel} #{asm_objects}"
-    cp kernel, "#{iso_root}/boot/#{kernel_name}"
 end
 
-file iso => [grub_cfg, kernel] do |t|
+file iso => [grub_cfg, kernel, "#{iso_root}/boot"] do |t|
+    cp kernel, "#{iso_root}/boot/#{kernel_name}"
     sh "grub-mkrescue -o #{iso} #{iso_root}"
 end
 
