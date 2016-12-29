@@ -1,0 +1,16 @@
+[package]
+name = "rose"
+version = "0.1.0"
+authors = ["Tyler Levine <tyler@tylerlevine.com>"]
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+rlibc = "1.0"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
