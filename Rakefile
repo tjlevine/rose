@@ -53,7 +53,7 @@ task :cargo => cargo_archive
 desc "Run rose using qemu"
 task :run => iso do |t|
     qemu_flags = "-cpu #{cpu} -curses #{ENV["QEMU_FLAGS"]}"
-    sh "/usr/bin/qemu-system-x86_64 #{qemu_flags} -cdrom #{iso}"
+    sh "qemu-system-x86_64 #{qemu_flags} -cdrom #{iso}"
 end
 
 desc "Clean up build files"

@@ -10,6 +10,7 @@ crate-type = ["staticlib"]
 rlibc = "1.0"
 volatile = "0.2.1"
 spin = "0.4.5"
+multiboot2 = "0.3.1"
 
 [profile.dev]
 panic = "abort"

@@ -13,6 +13,7 @@ section .text
 bits 32
 start:
     mov esp, stack_top  ; set up the stack pointer so we can make function calls
+    mov edi, ebx        ; save multiboot2 info pointer so we can pass it to rust_main later
 
     call check_mb       ; check that we were indeed loaded by a multiboot2 bootloader
     call check_lm       ; check for long mode availability (64 bit mode)
