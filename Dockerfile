@@ -5,6 +5,7 @@ MAINTAINER Tyler Levine <tyler@tylerlevine.com>
 RUN apt-get update && apt-get install -y \
 binutils         \
 curl             \
+gcc              \
 grub             \
 grub-pc-bin      \
 nasm             \

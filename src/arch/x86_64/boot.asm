@@ -6,6 +6,13 @@ MB_MAGIC        equ 0x36D76289 ; multiboot2 magic number which should be found i
 CPUID_IMPLICIT  equ 0x80000000 ; implicit argument for cpuid, will allow us to determine largest supported argument
 EXT_PROC_INFO   equ 0x80000001 ; minimum argument needed for extended processor information from cpuid
 
+; segment flag constants
+SEG_READ_WRITE   equ (1 << 41)
+SEG_EXECUTABLE   equ (1 << 43)
+SEG_CODE_OR_DATA equ (1 << 44)
+SEG_PRESENT      equ (1 << 47)
+SEG_CODE_64_BIT  equ (1 << 53)
+
 global start
 extern lm_start
 
@@ -118,6 +125,11 @@ check_ext_proc:
     jmp error
 
 set_up_page_tables:
+    ; recursively map the last entry in the P4 table
+    mov eax, p4_table
+    or eax, 0b11 ; present + writable
+    mov [p4_table + 511 * 8], eax
+
     ; map first P4 entry to P3 table
     mov eax, p3_table
     or eax, 0b11 ; present + writable
@@ -197,16 +209,16 @@ p3_table:
 p2_table:
     resb 4096
 stack_bottom:
-    resb 4096
+    resb 4096 * 2
 stack_top:
 
 section .rodata
 gdt64:
     dq 0 ; zero entry
 .code: equ $ - gdt64
-    dq (1 << 44) | (1 << 47) | (1 << 41) | (1 << 43) | (1 << 53) ; code segment
+    dq SEG_READ_WRITE | SEG_EXECUTABLE | SEG_CODE_OR_DATA | SEG_PRESENT | SEG_CODE_64_BIT ; code segment
 .data: equ $ - gdt64
-    dq (1 << 44) | (1 << 47) | (1 << 41) ; data segment
+    dq SEG_READ_WRITE | SEG_CODE_OR_DATA | SEG_PRESENT ; data segment
 .pointer:
     dw $ - gdt64 - 1
     dq gdt64
