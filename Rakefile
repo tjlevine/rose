@@ -6,7 +6,7 @@
 
 require 'rake'
 
-task :default => :iso
+task :default => :run
 
 # Target architecture
 arch = ENV["ARCH"] || "x86_64"
