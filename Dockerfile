@@ -18,7 +18,11 @@ ADD . /rose
 WORKDIR /rose
 
 # install rust
-RUN /bin/bash -c "curl https://sh.rustup.rs -sSf | sh -s -- -y && source $HOME/.cargo/env && rustup override add nightly"
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
+ENV PATH=/root/.cargo/bin:$PATH
+
+# clean the build environment in case we're building from a dirty one
+RUN rake clean
 
 CMD ["rake"]
 
