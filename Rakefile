@@ -79,7 +79,7 @@ file grub_cfg => [grub_cfg_template, "#{iso_root}/boot/grub"] do |t|
 end
 
 file kernel => [linker_script, *asm_objects, *cargo_archive] do |t|
-    sh "ld -n -T #{linker_script} -o #{kernel} #{asm_objects} #{cargo_archive}"
+    sh "ld -n --gc-sections -T #{linker_script} -o #{kernel} #{asm_objects} #{cargo_archive}"
 end
 
 file iso => [grub_cfg, kernel, "#{iso_root}/boot"] do |t|
