@@ -22,8 +22,8 @@ start:
     mov esp, stack_top  ; set up the stack pointer so we can make function calls
     mov edi, ebx        ; save multiboot2 info pointer so we can pass it to rust_main later
 
-    call check_mb       ; check that we were indeed loaded by a multiboot2 bootloader
-    call check_lm       ; check for long mode availability (64 bit mode)
+    call assert_multiboot            ; check that we were indeed loaded by a multiboot2 bootloader
+    call assert_long_mode_support    ; check for long mode availability (64 bit mode)
     call set_up_page_tables
     call enable_paging
     call enable_sse
@@ -48,16 +48,38 @@ error:
     mov byte  [VGA_BUFFER_ADDR + 0xA], al
     hlt
 
-check_mb:
+assert_multiboot:
     cmp eax, MB_MAGIC   ; the MB_MAGIC sequence is required to be writted to eax by
                         ; the multiboot2 bootloader just before giving control to the kernel
-    jne .no_mb
+    jne .no_multiboot
     ret
-.no_mb:
+.no_multiboot:
     mov al, "0"
     jmp error
 
-check_cpuid:
+assert_long_mode_support:
+    ; to check if long mode is available on this processor, we need to get
+    ; the extended processor info from the cpuid instruction, using argument
+    ; EXT_PROC_INFO. However, EXT_PROC_INFO may not be available from cpuid,
+    ; so we need to make sure it is by using the CPUID_IMPLICIT argument to
+    ; find the largest supported cpuid argument. If this maximum argument is
+    ; at least EXT_PROC_INFO, then we can check if long mode is available by
+    ; checking bit 29 (LM bit) in edx.
+
+    call assert_cpuid_support         ; check for availability of the cpuid instruction
+    call assert_extended_proc_info    ; check for availability of extended processor info from cpuid
+
+    ; extended processor info is available
+    mov eax, EXT_PROC_INFO  ; load cpuid extended processor info argument
+    cpuid                   ; loads feature bits into ecx and edx
+    test edx, 1 << 29       ; check bit 29 (LM bit) in edx
+    jz .no_lm               ; if bit 29 is not set, long mode is not available
+    ret
+.no_lm:
+    mov al, "3"
+    jmp error
+
+assert_cpuid_support:
     ; cpuid instruction may not be supported, so we need to probe for its existence
     ; we can do that by attempting to flip the ID bit (bit 21) in the FLAGS register
     ; if we are able to flip it, and it stays flipped, then cpuid must be supported
@@ -92,29 +114,7 @@ check_cpuid:
     mov al, "1"
     jmp error
 
-check_lm:
-    ; to check if long mode is available on this processor, we need to get
-    ; the extended processor info from the cpuid instruction, using argument
-    ; EXT_PROC_INFO. However, EXT_PROC_INFO may not be available from cpuid,
-    ; so we need to make sure it is by using the CPUID_IMPLICIT argument to
-    ; find the largest supported cpuid argument. If this maximum argument is
-    ; at least EXT_PROC_INFO, then we can check if long mode is available by
-    ; checking bit 29 (LM bit) in edx.
-
-    call check_cpuid    ; check for availability of the cpuid instruction
-    call check_ext_proc ; check for availability of extended processor info from cpuid
-
-    ; extended processor info is available
-    mov eax, EXT_PROC_INFO  ; load cpuid extended processor info argument
-    cpuid                   ; loads feature bits into ecx and edx
-    test edx, 1 << 29       ; check bit 29 (LM bit) in edx
-    jz .no_lm               ; if bit 29 is not set, long mode is not available
-    ret
-.no_lm:
-    mov al, "3"
-    jmp error
-
-check_ext_proc:
+assert_extended_proc_info:
     mov eax, CPUID_IMPLICIT ; load cpuid implicit argument
     cpuid                   ; get highest supported cpuid argument
     cmp eax, EXT_PROC_INFO  ; it must be at least EXT_PROC_INFO
