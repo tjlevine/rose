@@ -44,4 +44,4 @@ on a basic filesystem. I'll do my best to document my work in case someone has a
 
 ## License
 
-[MIT](License.txt)
+[MIT](LICENSE.txt)
