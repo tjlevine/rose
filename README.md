@@ -7,7 +7,7 @@ Rose is a hobbyist operating system which I'm developing for a couple reasons:
 2) I want to learn more about low level OS internals, especially on OS's targeting x86_64
 
 Fortunately, there are some excellent resources available to get started, with the most important being Philipp 
-Oppermann's fantastic blog series [Writing an OS in Rust](http://os.phil-op.com), which I'm following quite closely at
+Oppermann's fantastic blog series [Writing an OS in Rust](http://os.phil-opp.com), which I'm following quite closely at
 this early stage. Also, I would be remiss if I didn't also mention the great 
 [OSDev Wiki](http://wiki.osdev.org/Main_Page), which is full of priceless OS-related wisdom.
 
