@@ -143,7 +143,7 @@ impl Writer {
 
     fn buffer(&mut self) -> &mut Buffer {
         unsafe {
-            self.buffer.get_mut()
+            self.buffer.as_mut()
         }
     }
 

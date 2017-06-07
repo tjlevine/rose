@@ -56,11 +56,11 @@ impl ActivePageTable {
     }
 
     fn p4(&self) -> &Table<Level4> {
-        unsafe { self.p4.get() }
+        unsafe { self.p4.as_ref() }
     }
 
     fn p4_mut(&mut self) -> &mut Table<Level4> {
-        unsafe { self.p4.get_mut() }
+        unsafe { self.p4.as_mut() }
     }
 
     pub fn translate(&self, virtual_addr: VirtualAddress) -> Option<PhysicalAddress> {
