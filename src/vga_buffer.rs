@@ -94,7 +94,7 @@ impl Writer {
         Writer {
             column_position: column_position,
             color_code: color_code,
-            buffer: unsafe { Unique::new(buffer as *mut _) }
+            buffer: unsafe { Unique::new_unchecked(buffer as *mut _) }
         }
     }
 
