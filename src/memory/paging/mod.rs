@@ -2,6 +2,8 @@ use memory::PAGE_SIZE;
 use memory::Frame;
 use memory::FrameAllocator;
 
+use core::fmt;
+
 const ENTRY_COUNT: usize = 512;
 
 mod entry;
@@ -160,11 +162,12 @@ pub fn test_paging<A>(allocator: &mut A) where A: FrameAllocator {
     let mut page_table = unsafe { ActivePageTable::new() };
 
     test_map(&mut page_table, allocator);
+    test_translate(&page_table);
 }
 
 fn test_translate(page_table: &ActivePageTable) {
     // address 0 is mapped
-    println!("Virtual addr 0 -> physical addr {:?}", page_table.translate(0));
+    println!("Virtual addr 0 -> physical addr {}", page_table.translate(0).map_or("None", |addr| format_args!("{:x}", addr)));
     // second P1 entry
     println!("Virtual addr 4096 (2nd P1 entry) -> physical addr {:?}", page_table.translate(4096));
     // second P2 entry

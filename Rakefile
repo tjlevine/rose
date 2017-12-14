@@ -17,7 +17,7 @@ build_root = ENV["BUILD_ROOT"] || "build"
 # directory where all source files can be found relative to the project root
 src_root = ENV["SRC_ROOT"] || "src"
 
-# root for archetecture-specific build files
+# root for architecture-specific build files
 arch_src_root = src_root.pathmap("%p/arch/#{arch}")
 arch_build_root = build_root.pathmap("%p/arch/#{arch}")
 

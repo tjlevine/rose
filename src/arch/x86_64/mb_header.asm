@@ -1,5 +1,5 @@
 ; Multiboot header
-; This gets loaded by any multiboot 2 combatible bootloader, eg. grub
+; This gets loaded by any multiboot 2 compatible bootloader, eg. grub
 
 MAGIC equ 0xE85250D6
 ARCH  equ 0
