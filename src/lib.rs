@@ -1,4 +1,4 @@
-#![feature(lang_items, const_fn, unique, associated_consts)]
+#![feature(lang_items, const_fn, ptr_internals, core_intrinsics)]
 #![no_std]
 
 #[macro_use]
@@ -13,6 +13,9 @@ extern crate x86;
 #[macro_use]
 mod vga_buffer;
 mod memory;
+
+use core::intrinsics;
+use core::panic::PanicInfo;
 
 use memory::FrameAllocator;
 
@@ -87,12 +90,13 @@ fn get_mb_range(mb_start: usize, boot_info: &multiboot2::BootInformation) -> (us
 
 #[lang = "eh_personality"] extern fn eh_personality() {}
 
-#[lang = "panic_fmt"]
-#[no_mangle]
-extern fn panic_fmt(fmt: core::fmt::Arguments, file: &'static str, line: u32) -> ! {
-    println!("\n\nPANIC in {} at line {}:", file, line);
-    println!("    {}", fmt);
-    loop {}
+#[panic_handler]
+fn panic(_info: &PanicInfo) -> ! {
+    if let Some(location) = _info.location() {
+        println!("\n\nPANIC in {} at line {}:", location.file(), location.line());
+    }
+
+    unsafe { intrinsics::abort() }
 }
 
 #[allow(non_snake_case)]

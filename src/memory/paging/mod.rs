@@ -2,8 +2,6 @@ use memory::PAGE_SIZE;
 use memory::Frame;
 use memory::FrameAllocator;
 
-use core::fmt;
-
 const ENTRY_COUNT: usize = 512;
 
 mod entry;
@@ -121,9 +119,9 @@ impl ActivePageTable {
     }
 
     pub fn map_to<A>(&mut self, page: Page, frame: Frame, flags: EntryFlags, allocator: &mut A) where A: FrameAllocator {
-        let mut p3 = self.p4_mut().next_table_create(page.p4_index(), allocator);
-        let mut p2 = p3.next_table_create(page.p3_index(), allocator);
-        let mut p1 = p2.next_table_create(page.p2_index(), allocator);
+        let p3 = self.p4_mut().next_table_create(page.p4_index(), allocator);
+        let p2 = p3.next_table_create(page.p3_index(), allocator);
+        let p1 = p2.next_table_create(page.p2_index(), allocator);
 
         assert!(p1[page.p1_index()].is_unused());
         p1[page.p1_index()].set(frame, flags | PRESENT);
@@ -139,7 +137,7 @@ impl ActivePageTable {
         self.map_to(page, frame, flags, allocator);
     }
 
-    fn unmap<A>(&mut self, page: Page, allocator: &mut A) where A: FrameAllocator {
+    fn unmap<A>(&mut self, page: Page, _allocator: &mut A) where A: FrameAllocator {
         assert!(self.translate(page.start_address()).is_some());
 
         let p1 = self.p4_mut()
@@ -147,8 +145,8 @@ impl ActivePageTable {
             .and_then(|p3| p3.next_table_mut(page.p3_index()))
             .and_then(|p2| p2.next_table_mut(page.p2_index()))
             .expect("Mapping does not support huge pages");
-        
-        let frame = p1[page.p1_index()].pointed_frame().unwrap();
+
+        // let frame = p1[page.p1_index()].pointed_frame().unwrap();
         p1[page.p1_index()].set_unused();
         unsafe {
             ::x86::shared::tlb::flush(page.start_address());
@@ -167,7 +165,7 @@ pub fn test_paging<A>(allocator: &mut A) where A: FrameAllocator {
 
 fn test_translate(page_table: &ActivePageTable) {
     // address 0 is mapped
-    println!("Virtual addr 0 -> physical addr {}", page_table.translate(0).map_or("None", |addr| format_args!("{:x}", addr)));
+    println!("Virtual addr 0 -> physical addr {:?}", page_table.translate(0));
     // second P1 entry
     println!("Virtual addr 4096 (2nd P1 entry) -> physical addr {:?}", page_table.translate(4096));
     // second P2 entry
@@ -203,7 +201,7 @@ fn test_map<A: FrameAllocator>(page_table: &mut ActivePageTable, allocator: &mut
     //access_page(&Page::for_address(addr), page_table);
 }
 
-fn access_page(page: &Page, page_table: &ActivePageTable) {
+fn access_page(page: &Page, _page_table: &ActivePageTable) {
     let Page(ref page_num) = *page;
     println!("access page {}: {:#x}", page_num, unsafe { *(page.start_address() as *const u64) });
 }

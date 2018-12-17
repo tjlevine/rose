@@ -57,7 +57,6 @@ impl FrameAllocator for AreaFrameAllocator {
 
             let (Frame(kernel_start), Frame(kernel_end)) = self.kernel_range;
             let (Frame(mb_start), Frame(mb_end)) = self.mb_range;
-            
 
             let Frame(next_free) = self.next_free_frame;
 
@@ -80,7 +79,7 @@ impl FrameAllocator for AreaFrameAllocator {
         }
     }
 
-    fn deallocate_frame(&mut self, frame: Frame) {
+    fn deallocate_frame(&mut self, _frame: Frame) {
         unimplemented!()
     }
 }
